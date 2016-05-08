@@ -138,7 +138,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             }
         });
 
-        mMap.setOnMapClickListener(new GoogleMap.OnMapClickListener() {
+        mMap.setOnMapClickListener( new GoogleMap.OnMapClickListener() {
             @Override
             public void onMapClick(final LatLng point) {
 
@@ -181,11 +181,31 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         });
 
         LocationListener locationListener  = new LocationListener() {
+                @Override
+                public void onLocationChanged(Location location) {
+                    //check if location is in the range of any of the favorite locations
+                    for (LocItem i: myLocations){
+                        if(getRange(location.getLatitude(), location.getLongitude(), i.getLatitude(), i.getLongtitude()) < 160.9 ){
+                            //sendSMS(i);
+                            Toast.makeText(getApplicationContext(), "Visted!", Toast.LENGTH_SHORT).show();
+                        }
+                    }
+                }
 
-            @Override
-            public void onLocationChanged(Location location) {
+                public double getRange(double lat1, double lon1, double lat2, double lon2){
+                    Double R = 6378.137; // Radius of earth in KM
+                    Double dLat = (lat2 - lat1) * Math.PI / 180;
+                    Double dLon = (lon2 - lon1) * Math.PI / 180;
 
-            }
+                    Double a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                                    Math.sin(dLon/2) * Math.sin(dLon/2);
+
+                    Double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+                    Double d = R * c;
+                    d =  d * 1000; // meters
+                    return d;
+                }
 
             @Override
             public void onStatusChanged(String provider, int status, Bundle extras) {
