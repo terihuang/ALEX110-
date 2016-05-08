@@ -24,6 +24,7 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.ListView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.gms.maps.CameraUpdateFactory;
@@ -45,7 +46,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private View setLocat;
     private Button showList;
     private  String locationName;
-    private  ListOfFavLocations list;
+    private ArrayAdapter<String> arrayAdapter;
+    private ArrayList<String> arrayList;
+    private ListView listView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -55,16 +58,13 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
-        //locationList = getLayoutInflater().inflate(R.layout.location_list, null);
-        //listView = (ListView) locationList.findViewById(R.id.list_view);
+
+        arrayList = new ArrayList<String>();
+        arrayAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, arrayList);
+        listView = (ListView) findViewById(R.id.lv);
+        listView.setAdapter(arrayAdapter);
         showList = (Button) findViewById(R.id.listButton);
-    //        list = new ListOfFavLocations();
-        //String [] items = {"Aasfsdffgggrttrhyt","Bsfdrtgrtfsdg4yj65545","C123244rrefdsvbtyj5yhtrjuun6ryrth"};
-        //arrayList = new ArrayList<String>(Arrays.asList(items));
-        //arrayAdapter = new ArrayAdapter<String>(MapsActivity.this, R.layout.each_location, arrayList);
-        //ListOfFavLocations.class.add
-       // listView.setAdapter(arrayAdapter);
-        //arrayAdapter.notifyDataSetChanged();
+
     }
     /**
      * Manipulates the map once available.
@@ -78,7 +78,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
-
         // Add a marker in Sydney and move the camera
         LatLng sydney = new LatLng( -34, 151);
         final Marker addFavor = mMap.addMarker(new MarkerOptions().position(sydney).title("where am I  "));
@@ -86,30 +85,26 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         mMap.getUiSettings().setMyLocationButtonEnabled(true);
         mMap.getUiSettings().setZoomControlsEnabled(true);
 
-       // ListOfFavLocations.addItem("AAAAA");
-        //ListOfFavLocations.addItem("bbbbbbb");
-        //ListOfFavLocations.addItem("cccccccc");
-
-
         showList.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                // show the list ( change page)
-                Intent locationListPage = new Intent(MapsActivity.this, ListOfFavLocations.class);
-                //locationListPage.
-                startActivity(locationListPage);
+
+                listView.setVisibility(View.VISIBLE);
+                showList.setVisibility(View.GONE);
+
             }
         });
         mMap.setOnMapClickListener(new GoogleMap.OnMapClickListener() {
             @Override
             public void onMapClick(LatLng point) {
 
+                listView.setVisibility(View.GONE);
+                showList.setVisibility(View.VISIBLE);
                 //  show the alert box
                 addFavor.setPosition(point);
                 setLocat = LayoutInflater.from(MapsActivity.this).inflate(R.layout.set_location,null);
                 AlertDialog.Builder builder = new AlertDialog.Builder(MapsActivity.this);
                 builder.setMessage("What is the favorite location name?");
-
                 final EditText favName =(EditText) setLocat.findViewById(R.id.nameOfLocation);
 
                 builder.setView(setLocat).setPositiveButton("add",new DialogInterface.OnClickListener(){
@@ -119,10 +114,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                        locationName = favName.getText().toString();
 
                        if( !locationName.isEmpty() ) {
-                           //ListOfFavLocations.addItem(locationName);
-                            //list.addItem2(locationName);
-                           //list.add();
-                           ListOfFavLocations.addItem2();
+
+                           arrayList.add(locationName);
+                           arrayAdapter.notifyDataSetChanged();
                            Toast.makeText(getApplicationContext(), "added favorite location", Toast.LENGTH_SHORT).show();
                        }
 
@@ -159,7 +153,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         LocationManager locationManager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
         String locationProvider = LocationManager.GPS_PROVIDER;
-
 
         if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
                 ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED  ){

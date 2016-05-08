@@ -8,6 +8,7 @@ import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ListView;
+import android.widget.TextView;
 
 import com.google.android.gms.maps.SupportMapFragment;
 
@@ -19,38 +20,41 @@ import java.util.Arrays;
  */
 public class ListOfFavLocations extends Activity {
 
-    static ArrayAdapter<String> arrayAdapter;
-    static ArrayList<String> arrayList;
-    static ListView listView;
-
-    /*
-    public ListOfFavLocations(){
-
-    }
-    */
+    private static int count = 0;
+    private TextView[] tarray = new TextView[5];
+    //private ArrayAdapter<String> arrayAdapter;
+    //private ArrayList<String> arrayList;
+    //private ListView listView;
 
     protected void onCreate(Bundle savedInstanceState) {
 
         super.onCreate(savedInstanceState);
         setContentView(R.layout.location_list);
+/*
+        tarray[0] = (TextView) findViewById(R.id.item1);
+        tarray[1] = (TextView) findViewById(R.id.item2);
+        tarray[2] = (TextView) findViewById(R.id.item3);
+        tarray[3] = (TextView) findViewById(R.id.item4);
+        tarray[4] = (TextView) findViewById(R.id.item5);
+//        arrayList = new ArrayList<String>();
+ //       listView = (ListView) findViewById(R.id.lv);
+*/
+        if (!(getIntent().getExtras().isEmpty()) && (count < 5) ) {
+            tarray[count].setText(getIntent().getExtras().getString("message"));
+            count++;
+            //arrayAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, arrayList);
+            //listView.setAdapter(arrayAdapter);
+        }
+        /*
         listView = (ListView) findViewById(R.id.list_view);
         arrayList = new ArrayList<String>();
-        arrayList.add("AAAA");
-        arrayList.add("AbbA");
-        arrayList.add("ACCA");
-        arrayList.add("ADDD");
         arrayAdapter = new ArrayAdapter<String>(ListOfFavLocations.this, android.R.layout.simple_list_item_1, arrayList);
         listView.setAdapter(arrayAdapter);
-        Runnable run = new Runnable() {
-            public void run() {
-                arrayAdapter.notifyDataSetChanged();
-                listView.invalidateViews();
-                listView.refreshDrawableState();
-            }
-        };
+        */
         //arrayAdapter.notifyDataSetChanged();
     }
 
+/*
     public static void addItem(String item){
 
         arrayList.add(item);
@@ -81,6 +85,6 @@ public class ListOfFavLocations extends Activity {
         arrayAdapter.notifyDataSetChanged();
 
     }
-
+*/
  //   public void add(String item){}
 }
