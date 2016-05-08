@@ -1,28 +1,22 @@
 package com.example.khor_000.testapp;
 
-import com.example.khor_000.testapp.ListOfFavLocations;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
-import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.graphics.Color;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
-import android.text.InputType;
-import android.text.Layout;
-import android.text.TextUtils;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -34,10 +28,9 @@ import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
-import com.google.android.gms.maps.model.PolylineOptions;
 
+import java.text.DecimalFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback {
@@ -45,10 +38,12 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private GoogleMap mMap;
     private View setLocat;
     private Button showList;
-    private  String locationName;
-    private ArrayAdapter<String> arrayAdapter;
+    private String locationName;
+    private ArrayAdapter<LocItem> arrayAdapter;
     private ArrayList<String> arrayList;
     private ListView listView;
+    private List<LocItem> myLocations = new ArrayList<LocItem>();
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -59,13 +54,62 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
 
-        arrayList = new ArrayList<String>();
-        arrayAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, arrayList);
-        listView = (ListView) findViewById(R.id.lv);
-        listView.setAdapter(arrayAdapter);
         showList = (Button) findViewById(R.id.listButton);
 
+        //arrayList = new ArrayList<String>();
+        //arrayAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, arrayList);
+        //arrayAdapter = new ArrayAdapter<LocItem>( this, R.layout.single_location, myLocations);
+
+        arrayAdapter = new MyLocAdapter();
+        listView = (ListView) findViewById(R.id.lv);
+        listView.setAdapter(arrayAdapter);
+
     }
+
+    private class MyLocAdapter extends ArrayAdapter<LocItem>{
+        public MyLocAdapter(){
+            super(MapsActivity.this, R.layout.single_location, myLocations);
+        }
+
+        public void add(LocItem newLoc){
+            super.add(newLoc);
+            super.notifyDataSetChanged();
+        }
+
+
+        @Override
+        public View getView(int position, View convertView, ViewGroup parent) {
+            // make sure hav view if given null
+            View itemView = convertView;
+            if (itemView == null) {
+                itemView = getLayoutInflater().inflate(R.layout.single_location, parent, false);
+            }
+
+            //find the location to work with
+            LocItem currentLoc = myLocations.get(position);
+
+            //fill the view
+            // location name
+            TextView makeText = (TextView) itemView.findViewById(R.id.locName);
+            makeText.setText(currentLoc.getName());
+
+            // latitude
+            TextView laText = (TextView) itemView.findViewById(R.id.latTxt);
+            Double latVal = currentLoc.getLatitude();
+            latVal = Double.parseDouble(new DecimalFormat("##.##").format(latVal));
+            laText.setText("LAT: " + latVal + "     ");
+
+            // longtitude
+            TextView lngText = (TextView) itemView.findViewById(R.id.longTxt);
+            Double lngVal = currentLoc.getLongtitude();
+            lngVal = Double.parseDouble(new DecimalFormat("##.##").format(lngVal));
+            lngText.setText("  LON: " + lngVal);
+
+            return itemView;
+        }
+    }
+
+
     /**
      * Manipulates the map once available.
      * This callback is triggered when the map is ready to be used.
@@ -79,9 +123,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
         // Add a marker in Sydney and move the camera
-        LatLng sydney = new LatLng( -34, 151);
-        final Marker addFavor = mMap.addMarker(new MarkerOptions().position(sydney).title("where am I  "));
-        mMap.moveCamera(CameraUpdateFactory.newLatLng(sydney));
+        LatLng sanDiego = new LatLng( 32.7157, -117.1611);
+        final Marker addFavor = mMap.addMarker(new MarkerOptions().position(sanDiego).title("where am I  "));
+        mMap.moveCamera(CameraUpdateFactory.newLatLng(sanDiego));
         mMap.getUiSettings().setMyLocationButtonEnabled(true);
         mMap.getUiSettings().setZoomControlsEnabled(true);
 
@@ -91,12 +135,12 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
                 listView.setVisibility(View.VISIBLE);
                 showList.setVisibility(View.GONE);
-
             }
         });
+
         mMap.setOnMapClickListener(new GoogleMap.OnMapClickListener() {
             @Override
-            public void onMapClick(LatLng point) {
+            public void onMapClick(final LatLng point) {
 
                 listView.setVisibility(View.GONE);
                 showList.setVisibility(View.VISIBLE);
@@ -104,10 +148,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 addFavor.setPosition(point);
                 setLocat = LayoutInflater.from(MapsActivity.this).inflate(R.layout.set_location,null);
                 AlertDialog.Builder builder = new AlertDialog.Builder(MapsActivity.this);
-                builder.setMessage("What is the favorite location name?");
+                builder.setMessage("Assign A Name To This Location");
                 final EditText favName =(EditText) setLocat.findViewById(R.id.nameOfLocation);
 
-                builder.setView(setLocat).setPositiveButton("add",new DialogInterface.OnClickListener(){
+                builder.setView(setLocat).setPositiveButton("Add",new DialogInterface.OnClickListener(){
 
                    public void onClick(DialogInterface dialog, int which){
                        // set it to Data - base
@@ -115,9 +159,17 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
                        if( !locationName.isEmpty() ) {
 
-                           arrayList.add(locationName);
-                           arrayAdapter.notifyDataSetChanged();
-                           Toast.makeText(getApplicationContext(), "added favorite location", Toast.LENGTH_SHORT).show();
+                           //save location with given info
+                           LocItem tempLoc = new LocItem( locationName, point.latitude, point.longitude );
+
+                           arrayAdapter.add(tempLoc);
+
+                           Toast.makeText(getApplicationContext(), "Added To Favorite", Toast.LENGTH_SHORT).show();
+                       }
+
+                       else {
+                           Toast.makeText(getApplicationContext(), "No Input Detected", Toast.LENGTH_SHORT).show();
+
                        }
 
                    }                    // close the prompt after click cancel
