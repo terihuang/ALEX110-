@@ -9,7 +9,6 @@ import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.net.Uri;
-import android.provider.SyncStateContract;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
@@ -17,6 +16,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
@@ -46,7 +46,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private Button showList;
     private String locationName;
     private ArrayAdapter<LocItem> arrayAdapter;
-    private ArrayList<String> arrayList;
     private ListView listView;
     private Marker addFavor;
     private List<LocItem> myLocations = new ArrayList<LocItem>();
@@ -62,6 +61,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_maps);
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
@@ -71,10 +71,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         showList = (Button) findViewById(R.id.listButton);
 
-        //arrayList = new ArrayList<String>();
-        //arrayAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, arrayList);
-        //arrayAdapter = new ArrayAdapter<LocItem>( this, R.layout.single_location, myLocations);
-
         arrayAdapter = new MyLocAdapter();
         listView = (ListView) findViewById(R.id.lv);
         listView.setAdapter(arrayAdapter);
@@ -82,6 +78,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         // ATTENTION: This was auto-generated to implement the App Indexing API.
         // See https://g.co/AppIndexing/AndroidStudio for more information.
         client = new GoogleApiClient.Builder(this).addApi(AppIndex.API).build();
+
+        // call method to monitor click event on a location
+        locationClickHandler();
     }
 
     @Override
@@ -154,19 +153,60 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             // latitude
             TextView laText = (TextView) itemView.findViewById(R.id.latTxt);
             Double latVal = currentLoc.getLatitude();
-            latVal = Double.parseDouble(new DecimalFormat("##.##").format(latVal));
+            latVal = Double.parseDouble(new DecimalFormat("##.###").format(latVal));
             laText.setText("LAT: " + latVal + "     ");
 
             // longtitude
             TextView lngText = (TextView) itemView.findViewById(R.id.longTxt);
             Double lngVal = currentLoc.getLongtitude();
-            lngVal = Double.parseDouble(new DecimalFormat("##.##").format(lngVal));
+            lngVal = Double.parseDouble(new DecimalFormat("##.###").format(lngVal));
             lngText.setText("  LON: " + lngVal);
 
             return itemView;
         }
     }
 
+    private void locationClickHandler(){
+        ListView list = (ListView) findViewById(R.id.lv);
+        list.setOnItemClickListener(new AdapterView.OnItemClickListener(){
+            @Override
+            public void onItemClick(AdapterView<?> parent, View viewClicked,
+                                     int position, long id ) {
+
+                if (!myLocations.isEmpty()) {
+                    AlertDialog.Builder builder1 = new AlertDialog.Builder(MapsActivity.this);
+                    builder1.setMessage("Confirm Delete " + myLocations.get(position).getName() + " ?");
+
+                    final int index = position;
+
+                    builder1.setPositiveButton("YES", new DialogInterface.OnClickListener() {
+
+                        public void onClick(DialogInterface dialog, int which) {
+
+                            String deleName = myLocations.get(index).getName();
+
+                            myLocations.remove(index);
+
+                            locMakers.get(index).remove();
+
+                            locMakers.remove(index);
+
+                            arrayAdapter.notifyDataSetChanged();
+
+                            Toast.makeText(getApplicationContext(), "" + deleName + " Deleted", Toast.LENGTH_SHORT).show();
+
+                        }                    // close the prompt after click cancel
+                    }).setNegativeButton("No", null).setCancelable(true);  // cancelable even using back key
+
+                    AlertDialog alert = builder1.create();
+                    alert.show();
+
+                }
+            }
+
+        });
+
+    }
 
     /**
      * Manipulates the map once available.
@@ -183,7 +223,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         // Add a marker in San Diego and move the camera
         LatLng sanDiego = new LatLng(32.7157, -117.1611);
-        addFavor = mMap.addMarker(new MarkerOptions().position(sanDiego).title(" Where Am I "));
         //mMap.moveCamera(CameraUpdateFactory.newLatLng(sanDiego));
         mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(sanDiego.latitude, sanDiego.longitude), 12.0f));
         mMap.getUiSettings().setMyLocationButtonEnabled(true);
@@ -205,7 +244,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 listView.setVisibility(View.GONE);
                 showList.setVisibility(View.VISIBLE);
                 //  show the alert box
-                addFavor.setPosition(point);
+                addFavor = mMap.addMarker(new MarkerOptions().position(point).title(" Selceted "));
+                //addFavor.setPosition(point);
                 setLocat = LayoutInflater.from(MapsActivity.this).inflate(R.layout.set_location, null);
                 AlertDialog.Builder builder = new AlertDialog.Builder(MapsActivity.this);
                 builder.setMessage("Assign A Name To This Location");
@@ -221,18 +261,21 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
                             //save location with given info
                             LocItem tempLoc = new LocItem(locationName, point.latitude, point.longitude);
-
                             arrayAdapter.add(tempLoc);
 
-                            //add a marker on the map
-                            addFavor = mMap.addMarker(new MarkerOptions().position(point).title(locationName));
-                            locMakers.add(addFavor);
-
-                            Toast.makeText(getApplicationContext(), "Added To Favorite", Toast.LENGTH_SHORT).show();
-                        } else {
-                            Toast.makeText(getApplicationContext(), "No Input Detected", Toast.LENGTH_SHORT).show();
                             addFavor.remove();
 
+                            // add marker on map
+                            Marker temp = mMap.addMarker(new MarkerOptions().position(point).title(locationName));
+
+                            locMakers.add(temp);
+
+                            Toast.makeText(getApplicationContext(), "Added To Favorite", Toast.LENGTH_SHORT).show();
+                        }
+
+                        else {
+                            Toast.makeText(getApplicationContext(), "No Input Detected", Toast.LENGTH_SHORT).show();
+                            addFavor.remove();
                         }
 
                     }                    // close the prompt after click cancel
@@ -240,7 +283,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
                     public void onClick(DialogInterface dialog, int which) {
                         Toast.makeText(getApplicationContext(), "Canceled", Toast.LENGTH_SHORT).show();
-                        //addFavor.remove();
+                        addFavor.remove();
 
                     }                    // close the prompt after click cancel
                 }).setCancelable(true);  // cancelable even using back key
